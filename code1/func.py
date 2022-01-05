@@ -165,10 +165,8 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
 
   # 最大尤度
   max_p = np.max(prob)
-  print("最大尤度: ", max_p)
-  print("最大尤度を取るインデックス: ", np.unravel_index(np.argmax(prob), prob.shape))
   # 最小尤度(これ以下の値は除外する→ξとσの範囲を絞るため)
-  min_p = max_p / 10 ** 5
+  min_p = max_p / 10 ** 8
   ## min_pよりも大きい値を取るindexのリスト
   xi_sub = np.where(prob > min_p)[0]
   xi_sub = sorted(list(set(xi_sub)))  # 重複削除
@@ -193,7 +191,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
   sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
   sgm = [math.exp(s) for s in sgm]
   prob = calc_gl(N, xi, sgm, data, error, thr)
-  print("最大尤度を取るインデックス: ", np.unravel_index(np.argmax(prob), prob.shape))
+  # print("最大尤度を取るインデックス: ", np.unravel_index(np.argmax(prob), prob.shape))
 
   pp = np.sum(prob)  # 尤度の合計
   pm = np.max(prob)  # 尤度の最大値
@@ -228,10 +226,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
   # 等高線の描画
   log_sgm = [math.log(s) for s in sgm]
   X, Y = np.meshgrid(xi, log_sgm)
-  print(len(X))
-  print(len(Y))
   Z = np.array([[sum_prob[i, j] for i in range(N)] for j in range(N)])
-  print(len(Z))
   fig = plt.figure(figsize=(16, 8))
   ax = fig.add_subplot(111)
   cntr = ax.contour(X, Y, Z, levels=[0.1, 0.3, 0.5, 0.7, 0.9], colors='black')
@@ -244,7 +239,5 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
   ax.set_ylim([-0.8, 0.8])
   plt.savefig(img_name)
   plt.show()
-  elapsed_time = time.time() - start
-  print ("実行時間:{0}".format(elapsed_time) + "[sec]")
 
   return [rv_min, RV, rv_max]
