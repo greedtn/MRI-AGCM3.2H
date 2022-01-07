@@ -26,35 +26,38 @@ def calc_pot_all(thr, dir_path, param_name, output_pot, output_pot_idx, output_c
         grbs = grbs.select(parameterName=param_name)
         for grb in grbs:
             CNT += 1
-            for i in range(79):
-                for j in range(79):
-                    # CNT番目の点(i, j)の値がdataに入っている
-                    data = grb.data()[0].filled(fill_value=0)[i][j]
-                    # decluster
-                    if data > THR:
-                        if CNT > POT_IDX[79 * i + j][-1] + 168:
-                            POT[79 * i + j].append(data)
-                            POT_IDX[79 * i + j].append(CNT)
-                        else:
-                            if data > POT[79 * i + j][-1]:
-                                POT[79 * i + j][-1] = data
-                                POT_IDX[79 * i + j][-1] = CNT
-        for i in range(79 * 79):
-            POT[i].pop(0)
-            POT_IDX[i].pop(0)
+            data = grb.data()[0].filled(fill_value=0)
+            pot = np.where(data > THR)
+            print(len(pot[0]), "/", len(np.where(data >= 0)[0]))
+            for i in range(len(pot[0])):
+                m = pot[0][i]
+                n = pot[1][i]
+                d = grb.data()[0].filled(fill_value=0)[pot[0][i]][pot[1][i]]
+                # decluster
+                if CNT > POT_IDX[79 * m + n][-1] + 168:
+                    POT[79 * m + n].append(d)
+                    POT_IDX[79 * m + n].append(CNT)
+                else:
+                    if d > POT[79 * m + n][-1]:
+                        POT[79 * m + n][-1] = d
+                        POT_IDX[79 * m + n][-1] = CNT
 
-        # 書き出し
-        with open(output_pot, 'w') as file:
-            writer = csv.writer(file, lineterminator='\n')
-            writer.writerows(POT)
-        with open(output_pot_idx, 'w') as file:
-            writer = csv.writer(file, lineterminator='\n')
-            writer.writerows(POT)
-        with open(output_cnt, 'w') as file:
-            writer = csv.writer(file, lineterminator='\n')
-            writer.writerows(CNT)
+    for i in range(79 * 79):
+        POT[i].pop(0)
+        POT_IDX[i].pop(0)
 
-        return
+    # 書き出し
+    with open(output_pot, 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(POT)
+    with open(output_pot_idx, 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(POT)
+    with open(output_cnt, 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerow([CNT])
+
+    return
 
 
 def calc_pot(thr, dir_path, param_name, output_csv):
