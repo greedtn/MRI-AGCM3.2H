@@ -14,21 +14,22 @@ def calc_pot_all(thr, dir_path, param_name, output_pot, output_pot_idx, output_c
     POT = [[0] for _ in range(79 * 79)]  # 閾値を超えるデータ(POT[-1]を使用するために初期値を設定)を格納する2d-array
     POT_IDX = [[-168] for _ in range(79 * 79)]  # 閾値を超えるデータのindex(POT_IDX[-1]を使用するために初期値を設定)を格納する2d-array
     CNT = 0  # indexカウント用の変数
+    NOW = 0
 
     DIR_PATH = dir_path
     DIR = os.listdir(DIR_PATH)
 
     for filename in DIR:
+        s = time.time()
         if filename[:3] != "Jpn":
             continue
-        print(f'{filename}...now')
         grbs = pygrib.open(DIR_PATH + filename)
         grbs = grbs.select(parameterName=param_name)
         for grb in grbs:
             CNT += 1
             data = grb.data()[0].filled(fill_value=0)
             pot = np.where(data > THR)
-            print(len(pot[0]), "/", len(np.where(data >= 0)[0]))
+            # print(len(pot[0]), "/", len(np.where(data >= 0)[0]))
             for i in range(len(pot[0])):
                 m = pot[0][i]
                 n = pot[1][i]
@@ -41,18 +42,32 @@ def calc_pot_all(thr, dir_path, param_name, output_pot, output_pot_idx, output_c
                     if d > POT[79 * m + n][-1]:
                         POT[79 * m + n][-1] = d
                         POT_IDX[79 * m + n][-1] = CNT
+        
+        # 書き出し
+        with open(output_pot, 'w') as file:
+            writer = csv.writer(file, lineterminator='\n')
+            writer.writerows(POT)
+        with open(output_pot_idx, 'w') as file:
+            writer = csv.writer(file, lineterminator='\n')
+            writer.writerows(POT_IDX)
+        with open(output_cnt, 'w') as file:
+            writer = csv.writer(file, lineterminator='\n')
+            writer.writerow([CNT])
+
+        NOW += 1
+        print(f'----- {NOW} / {len(DIR)} done ({int((time.time() - s) // 60)}分で実行) -----')
 
     for i in range(79 * 79):
         POT[i].pop(0)
         POT_IDX[i].pop(0)
-
+        
     # 書き出し
     with open(output_pot, 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(POT)
     with open(output_pot_idx, 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(POT)
+        writer.writerows(POT_IDX)
     with open(output_cnt, 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerow([CNT])
@@ -206,7 +221,6 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         描画する(ξ, logσ)
         Fval(list): 再現期待値(RPの要素数個分だけ出てくる)
     """
-    start = time.time()
 
     # 誤差は1つだけしか与えられなくても、1*nの配列に変換する
     if len(error) == 1:
