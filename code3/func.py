@@ -33,7 +33,7 @@ def calc_pot_all(thr, dir_path, param_name, output_pot, output_pot_idx, output_c
             for i in range(len(pot[0])):
                 m = pot[0][i]
                 n = pot[1][i]
-                d = grb.data()[0].filled(fill_value=0)[pot[0][i]][pot[1][i]]
+                d = data[m][n]
                 # decluster
                 if CNT > POT_IDX[79 * m + n][-1] + 168:
                     POT[79 * m + n].append(d)
@@ -55,12 +55,12 @@ def calc_pot_all(thr, dir_path, param_name, output_pot, output_pot_idx, output_c
             writer.writerow([CNT])
 
         NOW += 1
-        print(f'----- {NOW} / {len(DIR)} done ({int((time.time() - s) // 60)}分で実行) -----')
+        print(f'----- {NOW} / {len(DIR)} done ({int((time.time() - s))}秒で実行) -----')
 
     for i in range(79 * 79):
         POT[i].pop(0)
         POT_IDX[i].pop(0)
-        
+
     # 書き出し
     with open(output_pot, 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
