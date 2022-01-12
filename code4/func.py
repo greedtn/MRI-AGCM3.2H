@@ -8,7 +8,7 @@ import math
 import time
 
 
-def calc_pot(thr, dir_path, param_name, output_csv):
+def calc_pot(thr, dir_path, param_name, output_csv, index):
     """
     POTを算出してCSVに出力する関数
     """
@@ -30,7 +30,9 @@ def calc_pot(thr, dir_path, param_name, output_csv):
             CNT += 1
             # まずは1地点でやるために, (20, 20)で試す
             # maskされた部分は0で埋める
-            data = grb.data()[0].filled(fill_value=0)[27][78]
+            m = index // 79
+            n = index % 79
+            data = grb.data()[0].filled(fill_value=0)[m][n]
             # decluster
             if data > THR:
                 if CNT > POT_IDX[-1] + 168:
@@ -56,24 +58,43 @@ def calc_pot(thr, dir_path, param_name, output_csv):
     return POT, POT_IDX, CNT, len(POT)
 
 
-def plot(filename, img_title, output_name):
-    with open(filename, 'r') as csv_file:
-        csv_reader = reader(csv_file)
-        l = list(csv_reader)
-        x = []
-        y = []
-        CNT = int(l[2][0])
-        for i in range(len(l[0])):
-            x.append(l[1][i])
-            y.append(float(l[0][i]))
+def plot(model_name, img_title, index):
 
-    fig = plt.figure()
+    with open('../csv2/' + model_name + '_CNT.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        CNT = int(list(csv_reader)[0][0])
+
+    with open('../csv2/' + model_name + '_POT.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        POT = list(csv_reader)[index]
+
+    with open('../csv2/' + model_name + '_POT_IDX.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        POT_IDX = list(csv_reader)[index]
+
+    # データ数を削減する
+    s = []
+    for i in range(len(POT)):
+        s.append([float(POT[i]), int(POT_IDX[i])])
+    s = sorted(s, reverse=True)
+    x = []
+    y = []
+    if model_name[:3] == 'HPA':
+        period = 31
+    else:
+        period = 25
+    p = min(period * 2, len(POT))
+    for i in range(p):
+        x.append(int(s[i][1]))
+        y.append(float(s[i][0]))
+
+    print("プロット数:", len(x))
     plt.plot(x, y, 'o')
     plt.xticks([])
+    # plt.yticks([])
     plt.xlabel("time")
     plt.ylabel("Hs[m]")
     plt.title(img_title)
-    fig.savefig(output_name)
     plt.show()
 
     return y, CNT
@@ -106,15 +127,11 @@ def calc_gl(n, xi, sgm, data, error, thr):
                 error_ = error[k]
                 # ξが0かどうかでCDFの式が変わる
                 if xi_ == 0:
-                    cdf1 = 1 - \
-                        math.exp(- (max(0, data_ - error_ - thr)) / sgm_)
-                    cdf2 = 1 - \
-                        math.exp(- (max(0, data_ + error_ - thr)) / sgm_)
+                    cdf1 = 1 - math.exp(- (max(0, data_ - error_ - thr)) / sgm_)
+                    cdf2 = 1 - math.exp(- (max(0, data_ + error_ - thr)) / sgm_)
                 else:
-                    cdf1 = 1 - max(0, 1 + xi_ * max(0, data_ -
-                                   error_ - thr) / sgm_) ** (-1 / xi_)
-                    cdf2 = 1 - max(0, 1 + xi_ * max(0, data_ +
-                                   error_ - thr) / sgm_) ** (-1 / xi_)
+                    cdf1 = 1 - max(0, 1 + xi_ * max(0, data_ - error_ - thr) / sgm_) ** (-1 / xi_)
+                    cdf2 = 1 - max(0, 1 + xi_ * max(0, data_ + error_ - thr) / sgm_) ** (-1 / xi_)
                 cdf = cdf * (cdf2 - cdf1)
             prob[i, j] = cdf
     return prob
@@ -209,6 +226,8 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     sum_prob = np.zeros((N, N))  # 累積尤度を格納する2d-array
     sorted_array = []  # sorted_array = [[probの値, [index1, index2]], ...] ← これが目標
     for _ in range(N * N):
+        if _ == 2:
+            break
         max_index = np.unravel_index(np.argmax(prob), prob.shape)
         sorted_array.append([prob[max_index[0], max_index[1]], max_index])
         prob[max_index[0], max_index[1]] = 0
@@ -225,6 +244,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         if i == 0:
             RV = rv  # 最尤推定値
             print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
+            break
         sum += max_value
         if sum < con:
             if (rv > 30):
@@ -250,8 +270,8 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     plt.title("Thr = 9.0")
     plt.xlabel("ξ")
     plt.ylabel("logσ")
-    plt.xlim([-0.5, 0.5])
-    plt.ylim([-0.8, 0.8])
+    # plt.xlim([-0.5, 0.5])
+    # plt.ylim([-0.8, 0.8])
     cont = plt.contour(
         X, Y, Z, levels=[0.1, 0.3, 0.5, 0.7, 0.95], colors='black')
     cont.clabel(fmt='%1.2f', fontsize=10)
@@ -260,4 +280,4 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     plt.savefig(img_name)
     plt.show()
 
-    return [rv_min, RV, rv_max]
+    return RV
