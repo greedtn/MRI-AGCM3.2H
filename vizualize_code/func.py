@@ -82,7 +82,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 100
+    N = 40
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
