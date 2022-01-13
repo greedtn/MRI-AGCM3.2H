@@ -212,7 +212,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     N = 100
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
-    print("xi:", min(xi), "~", max(xi))
+    # print("xi:", min(xi), "~", max(xi))
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
     sgm = [math.exp(s) for s in sgm]
     prob = calc_gl(N, xi, sgm, data, error, thr)
@@ -232,7 +232,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         sorted_array.append([prob[max_index[0], max_index[1]], max_index])
         prob[max_index[0], max_index[1]] = 0
     # 全ての格子点に対して、累積尤度的なものを計算する
-    print("n0, n, n0 / n", n0, n, n0 / n)
+    # print("n0, n, n0 / n", n0, n, n0 / n)
     for i in range(N * N):  # N*N回ループを回して, 全てのprob[i, j]に対して累積の尤度？てきなものを計算する
         max_value = sorted_array[i][0] / pp
         # 100再現期待値
@@ -243,7 +243,7 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
-            print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
+            # print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
             break
         sum += max_value
         if sum < con:
