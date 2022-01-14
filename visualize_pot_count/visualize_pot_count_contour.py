@@ -29,7 +29,6 @@ def func(csv_path, output_name):
     ax = fig.add_subplot(1, 1, 1, projection=proj)
 
     ax = plt.axes(projection=proj)
-    # ax.gridlines()
     ax.coastlines(resolution='10m')
     ax.set_extent((lon_w, lon_e, lat_s, lat_n), proj)  # 緯度経度の範囲を指定
 

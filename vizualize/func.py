@@ -1,6 +1,12 @@
 import numpy as np
 import math
-import time
+import csv
+from csv import reader
+
+"""
+RVの最尤推定値だけが分かればいいので, そのように改良している.
+"""
+
 
 def calc_gl(n, xi, sgm, data, error, thr):
     """
@@ -55,7 +61,7 @@ def set_param(min_par, max_par, n):
     return np.linspace(min_par, max_par, n)
 
 
-def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
+def lwm_gpd(data, error, thr, n, n0):
     """
     PPD(POSTERIOR PREDICTIVE DISTRIBUTION)の描画と、信頼区間ごとの尤度を描画する
 
@@ -63,18 +69,14 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         data (list): データ
         error (list): 誤差
         thr (int): 閾値
-        period (int): 期間
-        RP (list): 再現期間(要素数は1 or n)
         n (int) : データの総数
         n0 (int) : 閾値を超えるデータの数
-        con (float) : 信頼区間(0.9→90%)
 
     Returns:
         描画する(x, ppd)
         描画する(ξ, logσ)
         Fval(list): 再現期待値(RPの要素数個分だけ出てくる)
     """
-    start = time.time()
 
     # 誤差は1つだけしか与えられなくても、1*nの配列に変換する
     if len(error) == 1:
@@ -142,3 +144,61 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         sum += max_value
 
     return RV
+
+
+def calc_RV(model):
+
+    # RVの最尤推定値の算出
+    rv_p = np.zeros((79, 79))  # 過去
+    rv_f = np.zeros((79, 79))  # 未来
+    CNT = 219143  # 全データ数はこれ(25年分)
+    PERIOD = 25  # データの収集期間
+    # POTデータの取り出し(過去)
+    with open('../pot_csv/HPA_' + model + '_POT.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        POT_ALL = list(csv_reader)
+    for index in range(79 * 79):
+        print("過去", index, "/", 79 * 79, "now")
+        POT = POT_ALL[index]
+        # データ数を削減する
+        s = [float(val) for val in POT]
+        # データ数がPERIOD * 2未満は0
+        if len(s) < PERIOD * 2:
+            rv_p[index // 79][index % 79] = 0
+        else:
+            s = sorted(s, reverse=True)
+            # 上位年数＊2個のデータを使用する
+            s = s[:PERIOD * 2]
+            thr = s[-1]  # 閾値は最小値
+            rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
+            rv_p[index // 79][index % 79] = rv
+
+    # POTデータの取り出し(未来)
+    with open('../pot_csv/HFA_' + model + 'c0_POT.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        POT_ALL = list(csv_reader)
+    for index in range(79 * 79):
+        print("未来", index, "/", 79 * 79, "now")
+        POT = POT_ALL[index]
+        # データ数を削減する
+        s = [float(val) for val in POT]
+        # データ数がPERIOD * 2未満は0
+        if len(s) < PERIOD * 2:
+            rv_f[index // 79][index % 79] = 0
+        else:
+            s = sorted(s, reverse=True)
+            # 上位年数＊2個のデータを使用する
+            s = s[:PERIOD * 2]
+            thr = s[-1]  # 閾値は最小値
+            rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
+            rv_f[index // 79][index % 79] = rv
+
+    # csvに出力
+    with open('../RV_csv/' + model + ".csv", 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(rv_p)
+    with open('../RV_csv/' + model + "_c0.csv", 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(rv_f)
+
+    return
