@@ -142,11 +142,9 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     N = 100
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
-    print("xi:", min(xi), "~", max(xi))
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
     sgm = [math.exp(s) for s in sgm]
     prob = calc_gl(N, xi, sgm, data, error, thr)
-    # print("最大尤度を取るインデックス: ", np.unravel_index(np.argmax(prob), prob.shape))
 
     pp = np.sum(prob)  # 尤度の合計
 
@@ -177,8 +175,6 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
         if sum < con:
             return_val.append(rv)
             likelihood.append(max_value)
-            if (rv > 30):
-                print("sgm: ", s, "xi: ", x, "RV: ", rv, "sum: ", sum)
             rv_min = min(rv_min, rv)
             rv_max = max(rv_max, rv)
         else:
