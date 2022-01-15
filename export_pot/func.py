@@ -9,7 +9,6 @@ import numpy as np
 
 
 def calc_pot_all(thr, dir_path, param_name, model_name):
-
     THR = thr  # 閾値
     POT = [[0] for _ in range(79 * 79)]  # 閾値を超えるデータ(POT[-1]を使用するために初期値を設定)を格納する2d-array
     POT_IDX = [[-168] for _ in range(79 * 79)]  # 閾値を超えるデータのindex(POT_IDX[-1]を使用するために初期値を設定)を格納する2d-array
@@ -26,8 +25,6 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
         grbs = grbs.select(parameterName=param_name)
         for grb in grbs:
             CNT += 1
-            if CNT > 219143:  # 25年分算出したら, 終了
-                break
             data = grb.data()[0].filled(fill_value=0)
             pot = np.where(data > THR)
             for i in range(len(pot[0])):
@@ -45,6 +42,8 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
 
         NOW += 1
         print(f'----- {NOW} / 300 done')
+        if NOW == 300:
+            break
 
     for i in range(79 * 79):
         POT[i].pop(0)
