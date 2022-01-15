@@ -50,10 +50,10 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
         POT_IDX[i].pop(0)
 
     # 書き出し
-    with open('../pot_csv/' + model_name + '_POT.csv', 'w') as file:
+    with open('../pot_csv/' + model_name + '_POT_DATA.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(POT)
-    with open('../pot_csv/' + model_name + '_POT_IDX.csv', 'w') as file:
+    with open('../pot_csv/' + model_name + '_POT_INDEX.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(POT_IDX)
     with open('../pot_csv/' + model_name + '_POT_CNT.csv', 'w') as file:
