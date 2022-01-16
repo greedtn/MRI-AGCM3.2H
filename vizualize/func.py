@@ -149,11 +149,10 @@ def lwm_gpd(data, error, thr, n, n0):
 def calc_RV(model):
 
     # RVの最尤推定値の算出
-    rv_p = np.zeros((79, 79))  # 過去
-    rv_f = np.zeros((79, 79))  # 未来
+    rv_p = np.zeros((79, 79))
     CNT = 219143  # 全データ数はこれ(25年分)
     PERIOD = 25  # データの収集期間
-    # POTデータの取り出し(過去)
+    # POTデータの取り出し
     with open('../pot_csv/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
@@ -173,32 +172,9 @@ def calc_RV(model):
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
             rv_p[index // 79][index % 79] = rv
 
-    # POTデータの取り出し(未来)
-    with open('../pot_csv/HFA_' + model + '_c0_POT.csv', 'r') as csv_file:
-        csv_reader = reader(csv_file)
-        POT_ALL = list(csv_reader)
-    for index in range(79 * 79):
-        print("未来", index, "/", 79 * 79, "now")
-        POT = POT_ALL[index]
-        # データ数を削減する
-        s = [float(val) for val in POT]
-        # データ数がPERIOD * 2未満は0
-        if len(s) < PERIOD * 2:
-            rv_f[index // 79][index % 79] = 0
-        else:
-            s = sorted(s, reverse=True)
-            # 上位年数＊2個のデータを使用する
-            s = s[:PERIOD * 2]
-            thr = s[-1]  # 閾値は最小値
-            rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
-            rv_f[index // 79][index % 79] = rv
-
     # csvに出力
-    with open('../RV_csv/' + model + ".csv", 'w') as file:
+    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_p)
-    with open('../RV_csv/' + model + "_c0.csv", 'w') as file:
-        writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(rv_f)
 
     return
