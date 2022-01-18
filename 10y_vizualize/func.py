@@ -132,11 +132,11 @@ def lwm_gpd(data, error, thr, n, n0):
         prob[max_index[0], max_index[1]] = 0
     for i in range(N * N):  # N*N回ループを回して, 全てのprob[i, j]に対して累積の尤度？てきなものを計算する
         max_value = sorted_array[i][0] / pp
-        # 100再現期待値
+        # 10再現期待値
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
         # 定数
-        a = 100 * 24 * 365 * n0 / n
+        a = 10 * 24 * 365 * n0 / n
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv
