@@ -132,11 +132,11 @@ def lwm_gpd(data, error, thr, n, n0):
         prob[max_index[0], max_index[1]] = 0
     for i in range(N * N):  # N*N回ループを回して, 全てのprob[i, j]に対して累積の尤度？てきなものを計算する
         max_value = sorted_array[i][0] / pp
-        # 100再現期待値
+        # 10年再現期待値
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
         # 定数
-        a = 100 * 24 * 365 * n0 / n
+        a = 10 * 24 * 365 * n0 / n
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv
@@ -192,11 +192,11 @@ def calc_RV(model):
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
             rv_f[index // 79][index % 79] = rv
     # csvに出力
-    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
+    with open('RV_csv/HPA_' + model + "_10RV.csv", 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_p)
-    with open('RV_csv/HFA_' + model + ".csv", 'w') as file:
+    with open('RV_csv/HFA_' + model + "_10RV.csv", 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(rv_p)
+        writer.writerows(rv_f)
 
     return
