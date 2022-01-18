@@ -43,6 +43,9 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
         NOW += 1
         print(f'----- {NOW} / 300 done')
 
+        if NOW >= 300:
+            break
+
     # 初期値を削除
     for i in range(79 * 79):
         POT[i].pop(0)
