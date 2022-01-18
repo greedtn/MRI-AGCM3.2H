@@ -1,80 +1,5 @@
-import pygrib
-import os
-import csv
-from csv import reader
-import matplotlib.pyplot as plt
 import numpy as np
 import math
-import time
-
-
-def calc_pot(thr, dir_path, param_name, output_csv):
-
-    THR = thr  # 閾値
-    POT = [0]  # 閾値を超えるデータ(POT[-1]を使用するために初期値を設定)
-    POT_IDX = [-168]  # 閾値を超えるデータのindex(POT_IDX[-1]を使用するために初期値を設定)
-    CNT = 0  # indexカウント用の変数
-
-    DIR_PATH = dir_path
-    DIR = os.listdir(DIR_PATH)
-
-    for filename in DIR:
-        if filename[:3] != "Jpn":
-            continue
-        print(f'{filename}...now')
-        grbs = pygrib.open(DIR_PATH + filename)
-        grbs = grbs.select(parameterName=param_name)
-        for grb in grbs:
-            CNT += 1
-            # まずは1地点でやるために, (20, 20)で試す
-            # maskされた部分は0で埋める
-            data = grb.data()[0].filled(fill_value=0)[20][20]
-            # decluster
-            if data > THR:
-                if CNT > POT_IDX[-1] + 168:
-                    POT.append(data)
-                    POT_IDX.append(CNT)
-                else:
-                    if data > POT[-1]:
-                        POT[-1] = data
-                        POT_IDX[-1] = CNT
-
-    # 初期値を削除
-    POT.pop(0)
-    POT_IDX.pop(0)
-
-    # 書き出し
-    f = open(output_csv, 'w')
-    writer = csv.writer(f)
-    writer.writerow(POT)
-    writer.writerow(POT_IDX)
-    writer.writerow([CNT])
-    f.close()
-
-    return POT, POT_IDX, CNT, len(POT)
-
-
-def plot(filename, img_title, output_name):
-    with open(filename, 'r') as csv_file:
-        csv_reader = reader(csv_file)
-        l = list(csv_reader)
-        x = []
-        y = []
-        CNT = int(l[2][0])
-        for i in range(len(l[0])):
-            x.append(l[1][i])
-            y.append(float(l[0][i]))
-
-    fig = plt.figure()
-    plt.plot(x, y, 'o')
-    plt.xticks([])
-    plt.xlabel("time")
-    plt.ylabel("Hs[m]")
-    plt.title(img_title)
-    fig.savefig(output_name)
-    plt.show()
-
-    return y, CNT
 
 
 def calc_gl(n, xi, sgm, data, error, thr):
@@ -191,7 +116,6 @@ def lwm_gpd(data, error, thr, n, n0, con):
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
     sgm = [math.exp(s) for s in sgm]
     prob = calc_gl(N, xi, sgm, data, error, thr)
-    # print("最大尤度を取るインデックス: ", np.unravel_index(np.argmax(prob), prob.shape))
 
     pp = np.sum(prob)  # 尤度の合計
 
@@ -218,7 +142,6 @@ def lwm_gpd(data, error, thr, n, n0, con):
             rv_min = min(rv_min, rv)
             rv_max = max(rv_max, rv)
         else:
-            print(i, '番目で終わり')
             break
         sum_prob[sorted_array[i][1]] = sum
 
