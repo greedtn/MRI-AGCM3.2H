@@ -172,6 +172,10 @@ def calc_RV(model):
             thr = s[-1]  # 閾値は最小値
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
             rv_p[index // 79][index % 79] = rv
+    # CSVに出力
+    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(rv_p)
     # POTデータの取り出し(将来)
     with open('../pot_csv/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
@@ -191,12 +195,9 @@ def calc_RV(model):
             thr = s[-1]  # 閾値は最小値
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
             rv_f[index // 79][index % 79] = rv
-    # csvに出力
-    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
-        writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(rv_p)
+    # CSVに出力
     with open('RV_csv/HFA_' + model + ".csv", 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(rv_p)
+        writer.writerows(rv_f)
 
     return
