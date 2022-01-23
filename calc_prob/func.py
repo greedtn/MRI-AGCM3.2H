@@ -84,7 +84,7 @@ def set_param(min_par, max_par, n):
     return np.linspace(min_par, max_par, n)
 
 
-def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
+def lwm_gpd(data, error, thr, n, n0, con):
     """
     PPD(POSTERIOR PREDICTIVE DISTRIBUTION)の描画と、信頼区間ごとの尤度を描画する
 
@@ -149,8 +149,8 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
     pp = np.sum(prob)  # 尤度の合計
 
     sum = 0  # 累積尤度
-    rv_min = 100  # 再現期待値の95%信頼区間の最小値
-    rv_max = 0  # 再現期待値の95%信頼区間の最大値
+    rv_min = 100  # 再現期待値のcon%信頼区間の最小値
+    rv_max = 0  # 再現期待値のcon%信頼区間の最大値
     sum_prob = np.zeros((N, N))  # 累積尤度を格納する2d-array
     sorted_array = []  # sorted_array = [[probの値, [index1, index2]], ...] ← これが目標
     for _ in range(N * N):
@@ -181,5 +181,4 @@ def lwm_gpd(data, error, thr, period, RP, n, n0, con, img_name):
             break
         sum_prob[sorted_array[i][1]] = sum
 
-    # return [rv_min, RV, rv_max]
     return return_val, likelihood

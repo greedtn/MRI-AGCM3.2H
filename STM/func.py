@@ -81,7 +81,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 40
+    N = 100
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -120,8 +120,8 @@ def lwm_gpd(data, error, thr, n, n0, con):
     pp = np.sum(prob)  # 尤度の合計
 
     sum = 0
-    rv_min = 100  # 再現期待値の95%信頼区間の最小値
-    rv_max = 0  # 再現期待値の95%信頼区間の最大値
+    rv_min = 100  # 再現期待値のcon%信頼区間の最小値
+    rv_max = 0  # 再現期待値のcon%信頼区間の最大値
     sum_prob = np.zeros((N, N))  # 累積尤度を格納する2d-array
     sorted_array = []  # sorted_array = [[probの値, [index1, index2]], ...] ← これが目標
     for _ in range(N * N):
@@ -137,6 +137,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         rv = thr + s * ((100 * 24 * 365 * n0 / n) ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
+            print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
         sum += max_value
         if sum < con:
             rv_min = min(rv_min, rv)
@@ -144,25 +145,5 @@ def lwm_gpd(data, error, thr, n, n0, con):
         else:
             break
         sum_prob[sorted_array[i][1]] = sum
-
-    # # 等高線の描画
-    # log_sgm = np.array([math.log(s) for s in sgm])
-    # X, Y = np.meshgrid(xi, log_sgm)
-    # Z = np.zeros((N, N))
-    # for i in range(N):
-    #     for j in range(N):
-    #         if sum_prob[i, j] > 0:
-    #             Z[j][i] = sum_prob[i, j]  # 上下左右が逆になるのでiとjを入れ替える
-    #         else:
-    #             Z[j][i] = 1
-    # plt.figure(figsize=(16, 8))
-    # plt.title("Thr = 9.0")
-    # plt.xlabel("ξ")
-    # plt.ylabel("logσ")
-    # cont = plt.contour(
-    #     X, Y, Z, levels=[0.1, 0.3, 0.5, 0.7, 0.95], colors='black')
-    # cont.clabel(fmt='%1.2f', fontsize=10)
-    # plt.gca().set_aspect('equal')
-    # plt.show()
 
     return [rv_min, RV, rv_max]
