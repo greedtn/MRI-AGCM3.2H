@@ -81,7 +81,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 100
+    N = 200
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -110,7 +110,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         max_sgm = max_sgm * 3
 
     # 粒度
-    N = 100
+    N = 150
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
