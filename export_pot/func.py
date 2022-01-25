@@ -18,12 +18,21 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
     DIR_PATH = dir_path
     DIR = os.listdir(DIR_PATH)
 
+    CNT = 0
     for filename in DIR:
+        CNT += 1
+        if CNT >= 5:
+            break
         if filename[:3] != "Jpn":  # 日本のデータのみ使用
             continue
         grbs = pygrib.open(DIR_PATH + filename)
         grbs = grbs.select(parameterName=param_name)
+        cnt = 0
         for grb in grbs:
+            cnt += 1
+            if cnt >= 10:
+                break
+            print(grb.data()[0])
             CNT += 1
             data = grb.data()[0].filled(fill_value=0)
             pot = np.where(data > THR)
