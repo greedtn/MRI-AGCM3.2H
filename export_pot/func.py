@@ -9,6 +9,7 @@ import numpy as np
 
 
 def calc_pot_all(thr, dir_path, param_name, model_name):
+    print('-最新です-')
     THR = thr  # 閾値
     POT = [[0] for _ in range(79 * 79)]  # 閾値を超えるデータ(POT[-1]を使用するために初期値を設定)を格納する2d-array
     POT_IDX = [[-168] for _ in range(79 * 79)]  # 閾値を超えるデータのindex(POT_IDX[-1]を使用するために初期値を設定)を格納する2d-array
@@ -20,19 +21,11 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
 
     CNT = 0
     for filename in DIR:
-        CNT += 1
-        if CNT >= 5:
-            break
         if filename[:3] != "Jpn":  # 日本のデータのみ使用
             continue
         grbs = pygrib.open(DIR_PATH + filename)
         grbs = grbs.select(parameterName=param_name)
-        cnt = 0
         for grb in grbs:
-            cnt += 1
-            if cnt >= 10:
-                break
-            print(grb.data()[0])
             CNT += 1
             data = grb.data()[0].filled(fill_value=0)
             pot = np.where(data > THR)
@@ -61,10 +54,10 @@ def calc_pot_all(thr, dir_path, param_name, model_name):
         POT_IDX[i].pop(0)
 
     # 書き出し
-    with open('../pot_csv/' + model_name + '_POT_DATA.csv', 'w') as file:
+    with open('../pot_csv/' + model_name + '_POT_DATA_108.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(POT)
-    with open('../pot_csv/' + model_name + '_POT_INDEX.csv', 'w') as file:
+    with open('../pot_csv/' + model_name + '_POT_INDEX_108.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(POT_IDX)
     print(CNT)
