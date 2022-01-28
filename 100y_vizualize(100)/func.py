@@ -154,7 +154,7 @@ def calc_RV(model):
     CNT = 219143  # 全データ数はこれ(25年分)
     PERIOD = 25  # データの収集期間
     # POTデータの取り出し(現在)
-    with open('../pot_csv(103)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -162,12 +162,12 @@ def calc_RV(model):
         POT = POT_ALL[index]
         # データ数を削減する
         s = [float(val) for val in POT]
-        # データ数がPERIOD * 2未満は0
-        if len(s) < PERIOD * 2:
+        # データ数が10未満は0
+        if len(s) < 10:
             rv_p[index // 79][index % 79] = 0
         else:
             s = sorted(s, reverse=True)
-            # 上位年数＊2個のデータを使用する
+            # (最大で)上位年数＊2個のデータを使用する
             s = s[:PERIOD * 2]
             thr = s[-1]  # 閾値は最小値
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
@@ -177,7 +177,7 @@ def calc_RV(model):
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_p)
     # POTデータの取り出し(将来)
-    with open('../pot_csv(103)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -186,11 +186,11 @@ def calc_RV(model):
         # データ数を削減する
         s = [float(val) for val in POT]
         # データ数がPERIOD * 2未満は0
-        if len(s) < PERIOD * 2:
+        if len(s) < 10:
             rv_f[index // 79][index % 79] = 0
         else:
             s = sorted(s, reverse=True)
-            # 上位年数＊2個のデータを使用する
+            # (最大で)上位年数＊2個のデータを使用する
             s = s[:PERIOD * 2]
             thr = s[-1]  # 閾値は最小値
             rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))

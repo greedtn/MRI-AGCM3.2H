@@ -154,7 +154,7 @@ def calc_RV(model):
     CNT = 219143  # 全データ数はこれ(25年分)
     PERIOD = 25  # データの収集期間
     # POTデータの取り出し(現在)
-    with open('../pot_csv(100)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)(thr=8)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -177,7 +177,7 @@ def calc_RV(model):
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_p)
     # POTデータの取り出し(将来)
-    with open('../pot_csv(100)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)(thr=8)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):

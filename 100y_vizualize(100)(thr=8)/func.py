@@ -132,11 +132,11 @@ def lwm_gpd(data, error, thr, n, n0):
         prob[max_index[0], max_index[1]] = 0
     for i in range(N * N):  # N*N回ループを回して, 全てのprob[i, j]に対して累積の尤度？てきなものを計算する
         max_value = sorted_array[i][0] / pp
-        # 10再現期待値
+        # 100再現期待値
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
         # 定数
-        a = 10 * 24 * 365 * n0 / n
+        a = 100 * 24 * 365 * n0 / n
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv
@@ -154,7 +154,7 @@ def calc_RV(model):
     CNT = 219143  # 全データ数はこれ(25年分)
     PERIOD = 25  # データの収集期間
     # POTデータの取り出し(現在)
-    with open('../pot_csv(100)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)(thr=8)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -177,7 +177,7 @@ def calc_RV(model):
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_p)
     # POTデータの取り出し(将来)
-    with open('../pot_csv(100)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)(thr=8)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -185,7 +185,7 @@ def calc_RV(model):
         POT = POT_ALL[index]
         # データ数を削減する
         s = [float(val) for val in POT]
-        # データ数が10未満は0
+        # データ数がPERIOD * 2未満は0
         if len(s) < 10:
             rv_f[index // 79][index % 79] = 0
         else:
