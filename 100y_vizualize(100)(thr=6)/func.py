@@ -60,7 +60,7 @@ def set_param(min_par, max_par, n):
     return np.linspace(min_par, max_par, n)
 
 
-def lwm_gpd(data, error, thr, n, n0, con):
+def lwm_gpd(data, error, thr, n, n0):
     """
     100年再現期待値の信頼区間を計算する
 
