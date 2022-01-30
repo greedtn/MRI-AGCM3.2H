@@ -91,7 +91,6 @@ def lwm_gpd(data, error, thr, n, n0, con):
 
     # 最大尤度
     max_p = np.max(prob)
-    print("最大尤度:", max_p)
 
     # 最小尤度(これ以下の値は除外する→ξとσの範囲を絞るため)
     min_p = max_p / 10 ** 8
@@ -131,43 +130,18 @@ def lwm_gpd(data, error, thr, n, n0, con):
         rv = thr + s * ((10 * 365 * 24 * n0 / n) ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
-            print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
 
     return RV
 
 
-def calc_RV(model):
+def calc_RV_f(model):
 
     # RVの最尤推定値の算出
-    rv_p = np.zeros((79, 79))  # 現在用の配列
     rv_f = np.zeros((79, 79))  # 将来の配列
     CNT = 219143  # 全データ数はこれ(25年分)
     PERIOD = 25  # データの収集期間
-    # POTデータの取り出し(現在)
-    with open('../pot_csv(100)(thr=8)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
-        csv_reader = reader(csv_file)
-        POT_ALL = list(csv_reader)
-    for index in range(79 * 79):
-        print("現在", index, "/", 79 * 79 - 1, "now")
-        POT = POT_ALL[index]
-        # データ数を削減する
-        s = [float(val) for val in POT]
-        # データ数が10未満は0
-        if len(s) < 10:
-            rv_p[index // 79][index % 79] = 0
-        else:
-            s = sorted(s, reverse=True)
-            # (最大で)上位年数＊2個のデータを使用する
-            s = s[:PERIOD * 2]
-            thr = s[-1]  # 閾値は最小値
-            rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
-            rv_p[index // 79][index % 79] = rv
-    # CSVに出力
-    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
-        writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(rv_p)
     # POTデータの取り出し(将来)
-    with open('../pot_csv(100)(thr=8)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
+    with open('../pot_csv(100)(thr=6)/HFA_' + model + '_c0_POT_DATA.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         POT_ALL = list(csv_reader)
     for index in range(79 * 79):
@@ -189,5 +163,38 @@ def calc_RV(model):
     with open('RV_csv/HFA_' + model + ".csv", 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerows(rv_f)
+
+    return
+
+
+def calc_RV_p(model):
+
+    # RVの最尤推定値の算出
+    rv_p = np.zeros((79, 79))  # 現在用の配列
+    CNT = 219143  # 全データ数はこれ(25年分)
+    PERIOD = 25  # データの収集期間
+    # POTデータの取り出し(現在)
+    with open('../pot_csv(100)(thr=6)/HPA_' + model + '_POT_DATA.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        POT_ALL = list(csv_reader)
+    for index in range(79 * 79):
+        print("現在", index, "/", 79 * 79 - 1, "now")
+        POT = POT_ALL[index]
+        # データ数を削減する
+        s = [float(val) for val in POT]
+        # データ数が10未満は0
+        if len(s) < 10:
+            rv_p[index // 79][index % 79] = 0
+        else:
+            s = sorted(s, reverse=True)
+            # (最大で)上位年数＊2個のデータを使用する
+            s = s[:PERIOD * 2]
+            thr = s[-1]  # 閾値は最小値
+            rv = lwm_gpd(data=s, error=[0.05], thr=thr, n=CNT, n0=len(s))
+            rv_p[index // 79][index % 79] = rv
+    # CSVに出力
+    with open('RV_csv/HPA_' + model + ".csv", 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerows(rv_p)
 
     return
