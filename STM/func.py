@@ -4,7 +4,7 @@ import math
 
 def calc_gl(n, xi, sgm, data, error, thr):
     """
-    各格子点周りの尤度を計算する（まだ対数尤度にはできていない)
+    各格子点周りの尤度を計算する
 
     Args:
         n (int): 格子点の数の平方根(n*n個の格子点を作るので)
@@ -15,46 +15,30 @@ def calc_gl(n, xi, sgm, data, error, thr):
         thr (int): 閾値
 
     Returns:
-        prob (2darray): prob[i, j]は格子点(i, j)周りの尤度
+        prob (2darray): prob[i, j]は格子点(i, j)周りの対数尤度(正になるようにマイナス付けている)
 
     """
-    # prob = np.zeros((n, n))
-    # for i in range(n):  # ξの添字
-    #     for j in range(n):  # σの添字
-    #         sum = 0  # 対数尤度
-    #         xi_ = xi[i]
-    #         sgm_ = sgm[j]
-    #         for k in range(len(data)):
-    #             data_ = data[k]
-    #             error_ = error[k]
-    #             y1 = data_ - error_ - thr
-    #             y2 = data_ + error_ - thr
-    #             # ξが0かどうかでCDFの式が変わる
-    #             if xi_ == 0:
-    #                 sum += math.log(math.exp(-y2 / sgm_) - math.exp(-y1 / sgm_))
-    #             else:
-    #                 sum += (math.log(1 + max(0, xi_ * y2 / sgm_)) - math.log(1 + max(0, xi_ * y1 / sgm_))) / xi_
-    #         prob[i, j] = -sum
-    # return prob
 
     prob = np.zeros((n, n))
     for i in range(n):  # ξの添字
         for j in range(n):  # σの添字
-            sum = 0
+            cdf = 10 ** len(data)  # 最初に大きい値にしておく
             xi_ = xi[i]
             sgm_ = sgm[j]
-            ok = True
             for k in range(len(data)):
-                y = data[k] - thr
-                if 1 + xi_ * y / sgm_ <= 0:  # この条件を満たさないものはNG
-                    ok = False
-                    break
-                sum += math.log(1 + (xi_ * y / sgm_))
-            if (ok):
-                prob[i, j] = len(data) * math.log(sgm_) + ((1 / xi_) + 1) * sum
-            else:
-                prob[i, j] = 0
-            print('xi:', xi_, 'sgm:', sgm_, '対数尤度:', prob[i][j])
+                data_ = data[k]
+                error_ = error[k]
+                y1 = data_ - error_ - thr
+                y2 = data_ + error_ - thr
+                # ξが0かどうかでCDFの式が変わる
+                if xi_ == 0:
+                    cdf1 = 1 - math.exp(- (max(0, y1)) / sgm_)
+                    cdf2 = 1 - math.exp(- (max(0, y2)) / sgm_)
+                else:
+                    cdf1 = 1 - max(0, 1 + xi_ * max(0, y1) / sgm_) ** (-1 / xi_)
+                    cdf2 = 1 - max(0, 1 + xi_ * max(0, y2) / sgm_) ** (-1 / xi_)
+                cdf = cdf * (cdf2 - cdf1)
+            prob[i, j] = cdf
     return prob
 
 
@@ -76,22 +60,18 @@ def set_param(min_par, max_par, n):
 
 def lwm_gpd(data, error, thr, n, n0, con):
     """
-    PPD(POSTERIOR PREDICTIVE DISTRIBUTION)の描画と、信頼区間ごとの尤度を描画する
+    100年再現期待値の信頼区間を計算する
 
     Args:
         data (list): データ
         error (list): 誤差
         thr (int): 閾値
-        period (int): 期間
-        RP (list): 再現期間(要素数は1 or n)
         n (int) : データの総数
         n0 (int) : 閾値を超えるデータの数
         con (float) : 信頼区間(0.9→90%)
 
     Returns:
-        描画する(x, ppd)
-        描画する(ξ, logσ)
-        Fval(list): 再現期待値(RPの要素数個分だけ出てくる)
+        [RV_min, RV, RV_max]：RVの信頼区間と最尤推定値
     """
 
     # 誤差は1つだけしか与えられなくても、1*nの配列に変換する
@@ -105,16 +85,11 @@ def lwm_gpd(data, error, thr, n, n0, con):
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
     sgm = [math.exp(s) for s in sgm]
-    prob = calc_gl(N, xi, sgm, data, error, thr)
+    prob = calc_gl(n=N, xi=xi, sgm=sgm, data=data, error=error, thr=thr)
 
     # 最大尤度
     max_p = np.max(prob)
-    print("最大対数尤度:", max_p)
-
-    max_index = np.unravel_index(np.argmax(prob), prob.shape)
-    print(max_index, 'xi:', xi[max_index[0]], 'sgm:', sgm[max_index[1]])
-
-    return
+    print("最大尤度:", max_p)
 
     # 最小尤度(これ以下の値は除外する→ξとσの範囲を絞るため)
     min_p = max_p / 10 ** 8
@@ -141,7 +116,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
     sgm = [math.exp(s) for s in sgm]
-    prob = calc_gl(N, xi, sgm, data, error, thr)
+    prob = calc_gl(n=N, xi=xi, sgm=sgm, data=data, error=error, thr=thr)
 
     pp = np.sum(prob)  # 尤度の合計
 
