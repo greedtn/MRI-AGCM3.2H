@@ -18,24 +18,43 @@ def calc_gl(n, xi, sgm, data, error, thr):
         prob (2darray): prob[i, j]は格子点(i, j)周りの尤度
 
     """
+    # prob = np.zeros((n, n))
+    # for i in range(n):  # ξの添字
+    #     for j in range(n):  # σの添字
+    #         sum = 0  # 対数尤度
+    #         xi_ = xi[i]
+    #         sgm_ = sgm[j]
+    #         for k in range(len(data)):
+    #             data_ = data[k]
+    #             error_ = error[k]
+    #             y1 = data_ - error_ - thr
+    #             y2 = data_ + error_ - thr
+    #             # ξが0かどうかでCDFの式が変わる
+    #             if xi_ == 0:
+    #                 sum += math.log(math.exp(-y2 / sgm_) - math.exp(-y1 / sgm_))
+    #             else:
+    #                 sum += (math.log(1 + max(0, xi_ * y2 / sgm_)) - math.log(1 + max(0, xi_ * y1 / sgm_))) / xi_
+    #         prob[i, j] = -sum
+    # return prob
+
     prob = np.zeros((n, n))
     for i in range(n):  # ξの添字
         for j in range(n):  # σの添字
-            cdf = 10 ** len(data)  # 最初に大きい値にしておく
+            sum = 0
             xi_ = xi[i]
             sgm_ = sgm[j]
+            ok = True
             for k in range(len(data)):
-                data_ = data[k]
-                error_ = error[k]
-                # ξが0かどうかでCDFの式が変わる
-                if xi_ == 0:
-                    cdf1 = 1 - math.exp(- (max(0, data_ - error_ -thr)) / sgm_)
-                    cdf2 = 1 - math.exp(- (max(0, data_ + error_ -thr)) / sgm_) 
-                else:
-                    cdf1 = 1 - max(0, 1 + xi_ * max(0, data_ - error_ - thr) / sgm_) ** (-1 / xi_)
-                    cdf2 = 1 - max(0, 1 + xi_ * max(0, data_ + error_ - thr) / sgm_) ** (-1 / xi_)
-                cdf = cdf * (cdf2 - cdf1)
-            prob[i, j] = cdf
+                y = data[k] - thr
+                if 1 + xi_ * y / sgm_ <= 0:  # この条件を満たさないものはNG
+                    ok = False
+                    break
+                sum += math.log(1 + (xi_ * y / sgm_))
+            if (ok):
+                prob[i, j] = len(data) * math.log(sgm_) + ((1 / xi_) + 1) * sum
+            else:
+                prob[i, j] = 0
+            print('xi:', xi_, 'sgm:', sgm_, '対数尤度:', prob[i][j])
     return prob
 
 
@@ -81,7 +100,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 200
+    N = 40
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -90,6 +109,13 @@ def lwm_gpd(data, error, thr, n, n0, con):
 
     # 最大尤度
     max_p = np.max(prob)
+    print("最大対数尤度:", max_p)
+
+    max_index = np.unravel_index(np.argmax(prob), prob.shape)
+    print(max_index, 'xi:', xi[max_index[0]], 'sgm:', sgm[max_index[1]])
+
+    return
+
     # 最小尤度(これ以下の値は除外する→ξとσの範囲を絞るため)
     min_p = max_p / 10 ** 8
     # min_pよりも大きい値を取るindexのリスト
@@ -110,7 +136,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         max_sgm = max_sgm * 3
 
     # 粒度
-    N = 150
+    N = 200
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
@@ -132,9 +158,9 @@ def lwm_gpd(data, error, thr, n, n0, con):
     for i in range(N * N):  # N*N回ループを回して, 全てのprob[i, j]に対して累積の尤度？てきなものを計算する
         max_value = sorted_array[i][0] / pp
         # 100再現期待値
-        s = sgm[sorted_array[i][1][0]]
-        x = xi[sorted_array[i][1][1]]
-        rv = thr + s * ((100 * 24 * 365 * n0 / n) ** x - 1) / x
+        x = xi[sorted_array[i][1][0]]
+        s = sgm[sorted_array[i][1][1]]
+        rv = thr + s * ((100 * 365 * 24 * 79 * 79 * n0 / n) ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
             print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
