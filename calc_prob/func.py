@@ -48,7 +48,7 @@ def calc_gl(n, xi, sgm, data, error, thr):
     prob = np.zeros((n, n))
     for i in range(n):  # ξの添字
         for j in range(n):  # σの添字
-            cdf = 10 ** len(data)  # 最初に大きい値にしておく
+            cdf = 10 ** (len(data))  # 最初に大きい値にしておく
             xi_ = xi[i]
             sgm_ = sgm[j]
             for k in range(len(data)):
@@ -64,6 +64,7 @@ def calc_gl(n, xi, sgm, data, error, thr):
                     cdf1 = 1 - max(0, 1 + xi_ * max(0, y1) / sgm_) ** (-1 / xi_)
                     cdf2 = 1 - max(0, 1 + xi_ * max(0, y2) / sgm_) ** (-1 / xi_)
                 cdf = cdf * (cdf2 - cdf1)
+                cdf *= 100
             prob[i, j] = cdf
     return prob
 
@@ -166,7 +167,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
         # 定数
-        a = 100 * 24 * 365 * n0 / n
+        a = 100 * 24 * 365 * 79 * 79 * n0 / n
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
