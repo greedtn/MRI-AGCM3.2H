@@ -57,8 +57,10 @@ def calc_exposure(thr, dir_path, param_name, model_name):
     # 初期値を削除
     for i in range(79 * 79):
         POT[i].pop(0)
-        POT_IDX[i].pop(0)
+    POT_IDX.pop(0)
 
+    print("STMの発生回数:", len(POT_IDX))
+    
     # 書き出し
     with open('../Ex_csv/' + model_name + '_ex.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
