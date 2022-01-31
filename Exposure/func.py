@@ -7,6 +7,7 @@ import pygrib
 import os
 import csv
 import numpy as np
+import math
 
 
 def calc_exposure(thr, dir_path, param_name, model_name):
@@ -36,16 +37,16 @@ def calc_exposure(thr, dir_path, param_name, model_name):
             n = pot[1][0]
             d = data[m][n]  # STMがが起きた場所
             # decluster(1週間以上間隔を空ける)
-            if CNT > POT_IDX[79 * m + n][-1] + 24 * 7:
+            if CNT > POT_IDX[-1] + 24 * 7:
                 for i in range(79):
                     for j in range(79):
-                        POT[79 * i + j].append(data[i][j])
+                        POT[79 * i + j].append(math.floor(data[i][j] * 10 ** 2) / (10 ** 2))
                 POT_IDX.append(CNT)
             else:
                 if d > POT[79 * m + n][-1]:
                     for i in range(79):
                         for j in range(79):
-                            POT[79 * i + j][-1] = data[i][j]
+                            POT[79 * i + j][-1] = math.floor(data[i][j] * 10 ** 2) / (10 ** 2)
                     POT_IDX[-1] = CNT
 
         NOW += 1
@@ -67,5 +68,5 @@ def calc_exposure(thr, dir_path, param_name, model_name):
         writer.writerows(POT)
     with open('../Ex_csv/' + model_name + '_ex_idx.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
-        writer.writerows(POT_IDX)
+        writer.writerow(POT_IDX)
     return
