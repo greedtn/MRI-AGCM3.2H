@@ -29,7 +29,7 @@ def plot(filename, img_title, output_name):
 
 def calc_gl(n, xi, sgm, data, error, thr):
     """
-    各格子点周りの尤度を計算する（まだ対数尤度にはできていない)
+    各格子点周りの尤度を計算する
 
     Args:
         n (int): 格子点の数の平方根(n*n個の格子点を作るので)
@@ -40,9 +40,10 @@ def calc_gl(n, xi, sgm, data, error, thr):
         thr (int): 閾値
 
     Returns:
-        prob (2darray): prob[i, j]は格子点(i, j)周りの尤度
+        prob (2darray): prob[i, j]は格子点(i, j)周りの対数尤度(正になるようにマイナス付けている)
 
     """
+
     prob = np.zeros((n, n))
     for i in range(n):  # ξの添字
         for j in range(n):  # σの添字
@@ -52,17 +53,15 @@ def calc_gl(n, xi, sgm, data, error, thr):
             for k in range(len(data)):
                 data_ = data[k]
                 error_ = error[k]
+                y1 = data_ - error_ - thr
+                y2 = data_ + error_ - thr
                 # ξが0かどうかでCDFの式が変わる
                 if xi_ == 0:
-                    cdf1 = 1 - \
-                        math.exp(- (max(0, data_ - error_ - thr)) / sgm_)
-                    cdf2 = 1 - \
-                        math.exp(- (max(0, data_ + error_ - thr)) / sgm_)
+                    cdf1 = 1 - math.exp(- (max(0, y1)) / sgm_)
+                    cdf2 = 1 - math.exp(- (max(0, y2)) / sgm_)
                 else:
-                    cdf1 = 1 - max(0, 1 + xi_ * max(0, data_ -
-                                   error_ - thr) / sgm_) ** (-1 / xi_)
-                    cdf2 = 1 - max(0, 1 + xi_ * max(0, data_ +
-                                   error_ - thr) / sgm_) ** (-1 / xi_)
+                    cdf1 = 1 - max(0, 1 + xi_ * max(0, y1) / sgm_) ** (-1 / xi_)
+                    cdf2 = 1 - max(0, 1 + xi_ * max(0, y2) / sgm_) ** (-1 / xi_)
                 cdf = cdf * (cdf2 - cdf1)
             prob[i, j] = cdf
     return prob
@@ -110,7 +109,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 200
+    N = 40
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -139,7 +138,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         max_sgm = max_sgm * 3
 
     # 粒度
-    N = 150
+    N = 100  # 計算時間削減のために100にしている
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
