@@ -1,3 +1,4 @@
+from re import X
 import matplotlib.pyplot as plt
 import numpy as np
 import math
@@ -138,7 +139,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         max_sgm = max_sgm * 3
 
     # 粒度
-    N = 100  # 計算時間削減のために100にしている
+    N = 40
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
@@ -170,6 +171,8 @@ def lwm_gpd(data, error, thr, n, n0, con):
         if i == 0:
             RV = rv  # 最尤推定値
             print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
+            XI = x
+            SGM = s
         sum += max_value
         if sum < con:
             return_val.append(rv)
@@ -180,4 +183,4 @@ def lwm_gpd(data, error, thr, n, n0, con):
             break
         sum_prob[sorted_array[i][1]] = sum
 
-    return return_val, likelihood
+    return return_val, likelihood, XI, SGM

@@ -22,7 +22,7 @@ def calc_gl(n, xi, sgm, data, error, thr):
     prob = np.zeros((n, n))
     for i in range(n):  # ξの添字
         for j in range(n):  # σの添字
-            cdf = 10 ** len(data)  # 最初に大きい値にしておく
+            cdf = 10 ** (len(data))  # 最初に大きい値にしておく
             xi_ = xi[i]
             sgm_ = sgm[j]
             for k in range(len(data)):
@@ -38,6 +38,7 @@ def calc_gl(n, xi, sgm, data, error, thr):
                     cdf1 = 1 - max(0, 1 + xi_ * max(0, y1) / sgm_) ** (-1 / xi_)
                     cdf2 = 1 - max(0, 1 + xi_ * max(0, y2) / sgm_) ** (-1 / xi_)
                 cdf = cdf * (cdf2 - cdf1)
+                cdf *= 100
             prob[i, j] = cdf
     return prob
 
@@ -83,7 +84,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
     N = 40
     # ξとσをセット
     xi = set_param(-5, 5, N)
-    sgm = set_param(math.log(0.01), math.log(10), N)
+    sgm = set_param(math.log(0.01), math.log(20), N)
     sgm = [math.exp(s) for s in sgm]
     prob = calc_gl(n=N, xi=xi, sgm=sgm, data=data, error=error, thr=thr)
 
@@ -110,10 +111,13 @@ def lwm_gpd(data, error, thr, n, n0, con):
         min_sgm = min_sgm / 3
         max_sgm = max_sgm * 3
 
+    # print("xi:", min_xi, max_xi)
+    # print("sgm:", min_sgm, max_sgm)
+
     # 粒度
     N = 200
     # パラメータの範囲を絞って、粒度を細かくした
-    xi = set_param(min_xi, max_xi, N)
+    xi = set_param(-1, 0, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
     sgm = [math.exp(s) for s in sgm]
     prob = calc_gl(n=N, xi=xi, sgm=sgm, data=data, error=error, thr=thr)
@@ -123,7 +127,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
     sum = 0
     rv_min = 100  # 再現期待値のcon%信頼区間の最小値
     rv_max = 0  # 再現期待値のcon%信頼区間の最大値
-    sum_prob = np.zeros((N, N))  # 累積尤度を格納する2d-array
+    sum_prob = np.ones((N, N))  # 累積尤度を格納する2d-array
     sorted_array = []  # sorted_array = [[probの値, [index1, index2]], ...] ← これが目標
     for _ in range(N * N):
         max_index = np.unravel_index(np.argmax(prob), prob.shape)
@@ -147,4 +151,4 @@ def lwm_gpd(data, error, thr, n, n0, con):
             break
         sum_prob[sorted_array[i][1]] = sum
 
-    return [rv_min, RV, rv_max]
+    return [rv_min, RV, rv_max], [xi, sgm, sum_prob]
