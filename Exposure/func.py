@@ -72,7 +72,7 @@ def calc_exposure(thr, dir_path, param_name, model_name):
     POT_IDX.pop(0)
 
     print("STMの発生回数:", len(POT_IDX))
-    
+
     # 書き出し
     with open('../Ex_csv/' + model_name + '_ex.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
@@ -80,6 +80,60 @@ def calc_exposure(thr, dir_path, param_name, model_name):
     with open('../Ex_csv/' + model_name + '_ex_idx.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
         writer.writerow(POT_IDX)
+    return
+
+
+def calc_max(dir_path, model_name, param_name):
+    MAX_DATA = [[0] for _ in range(79 * 79)]  # STM発生前後1wの各地点での最大値を格納する
+    with open('../Ex_csv/' + model_name + '_ex_idx.csv', 'r') as csv_file:
+        csv_reader = reader(csv_file)
+        Ex_IDX = list(csv_reader)[0]
+    print(Ex_IDX)
+    CNT = 0  # 通し番号
+    NOW = 0  # 完了済みファイル数のカウント
+
+    DIR_PATH = dir_path
+    DIR = os.listdir(DIR_PATH)
+    Ex = 0  # これを1つずつずらしていく
+    is_STM = False
+    is_DONE = False
+
+    for filename in DIR:
+        if filename[:3] != "Jpn":  # 日本のデータのみ使用
+            continue
+        grbs = pygrib.open(DIR_PATH + filename)
+        grbs = grbs.select(parameterName=param_name)
+        for grb in grbs:
+            CNT += 1
+            if CNT == -24 * 7 + int(Ex_IDX[Ex]):  # STMの前後1wに突入
+                is_STM = True
+                TEMP_MAX = np.zeros((79, 79))
+            if CNT == int(Ex_IDX[Ex]) + 24 * 7:  # STMの前後1w終了
+                is_STM = False
+                for i in range(79 * 79):
+                    MAX_DATA[i].append(TEMP_MAX[i // 79][i % 79])
+                Ex += 1  # 次のイベントに移動
+                if Ex >= len(Ex_IDX):
+                    is_DONE = True
+                    break
+            if is_STM:
+                data = grb.data()[0].filled(fill_value=0)
+                TEMP_MAX = np.maximum(TEMP_MAX, data)
+        if is_DONE:
+            break
+        NOW += 1
+        print(f'----- {NOW} / 300 done')
+        if NOW >= 10:
+            break
+
+    if is_STM:  # 最後にSTMの前後1w終了時の処理がまだなされていなかった場合
+        is_STM = False
+        for i in range(79 * 79):
+            MAX_DATA[i].append(TEMP_MAX[i // 79][i % 79])
+
+    with open('../Ex_csv/' + model_name + '_max.csv', 'w') as file:
+        writer = csv.writer(file, lineterminator='\n')
+        writer.writerow(MAX_DATA)
     return
 
 
