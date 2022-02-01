@@ -111,7 +111,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 300
+    N = 40
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -175,23 +175,23 @@ def lwm_gpd(data, error, thr, n, n0, con):
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
-            print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
+            # print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)
             XI = x
             SGM = s
         sum += max_value
+        return_val.append(rv)
+        likelihood.append(max_value)
         if sum < con:
-            return_val.append(rv)
-            likelihood.append(max_value)
             if rv_min > rv:
                 rv_min = rv
                 xi_min = x
                 sgm_min = s
             if rv_max < rv:
-                rv_max = rv_max
+                rv_max = rv
                 xi_max = x
                 sgm_max = s
-        else:
-            break
         sum_prob[sorted_array[i][1]] = sum
+
+    print(rv_min, RV, rv_max)
 
     return return_val, likelihood, [xi_min, XI, xi_max], [sgm_min, SGM, sgm_max]
