@@ -108,32 +108,33 @@ def calc_max(dir_path, model_name, param_name):
             if CNT == -24 * 7 + int(Ex_IDX[Ex]):  # STMの前後1wに突入
                 is_STM = True
                 TEMP_MAX = np.zeros((79, 79))
+            if is_STM:
+                data = grb.data()[0].filled(fill_value=0)
+                TEMP_MAX = np.maximum(TEMP_MAX, data)
             if CNT == int(Ex_IDX[Ex]) + 24 * 7:  # STMの前後1w終了
                 is_STM = False
                 for i in range(79 * 79):
-                    MAX_DATA[i].append(TEMP_MAX[i // 79][i % 79])
+                    MAX_DATA[i].append(math.floor(TEMP_MAX[i // 79][i % 79] * 10 ** 2) / (10 ** 2))
                 Ex += 1  # 次のイベントに移動
                 if Ex >= len(Ex_IDX):
                     is_DONE = True
                     break
-            if is_STM:
-                data = grb.data()[0].filled(fill_value=0)
-                TEMP_MAX = np.maximum(TEMP_MAX, data)
         if is_DONE:
             break
         NOW += 1
         print(f'----- {NOW} / 300 done')
-        if NOW >= 10:
+        if NOW >= 300:
             break
 
     if is_STM:  # 最後にSTMの前後1w終了時の処理がまだなされていなかった場合
         is_STM = False
         for i in range(79 * 79):
-            MAX_DATA[i].append(TEMP_MAX[i // 79][i % 79])
-
+            MAX_DATA[i].append(math.floor(TEMP_MAX[i // 79][i % 79] * 10 ** 2) / (10 ** 2))
+    for i in range(79 * 79):
+        MAX_DATA[i].pop(0)  # 先頭の0削除
     with open('../Ex_csv/' + model_name + '_max.csv', 'w') as file:
         writer = csv.writer(file, lineterminator='\n')
-        writer.writerow(MAX_DATA)
+        writer.writerows(MAX_DATA)
     return
 
 
