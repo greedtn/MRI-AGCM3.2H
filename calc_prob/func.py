@@ -111,7 +111,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
             error.append(error[0])
 
     # 格子点の粒度
-    N = 40
+    N = 300
     # ξとσをセット
     xi = set_param(-5, 5, N)
     sgm = set_param(math.log(0.01), math.log(10), N)
@@ -140,7 +140,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         max_sgm = max_sgm * 3
 
     # 粒度
-    N = 100
+    N = 200
     # パラメータの範囲を絞って、粒度を細かくした
     xi = set_param(min_xi, max_xi, N)
     sgm = set_param(math.log(min_sgm), math.log(max_sgm), N)
@@ -152,6 +152,10 @@ def lwm_gpd(data, error, thr, n, n0, con):
     sum = 0  # 累積尤度
     rv_min = 100  # 再現期待値のcon%信頼区間の最小値
     rv_max = 0  # 再現期待値のcon%信頼区間の最大値
+    xi_min = 100
+    xi_max = 0
+    sgm_min = 100
+    sgm_max = 0
     sum_prob = np.zeros((N, N))  # 累積尤度を格納する2d-array
     sorted_array = []  # sorted_array = [[probの値, [index1, index2]], ...] ← これが目標
     for _ in range(N * N):
@@ -167,7 +171,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
         # 定数
-        a = 100 * 24 * 365 * 79 * 79 * n0 / n
+        a = 100 * 24 * 365 * n0 / n
         rv = thr + s * (a ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
@@ -178,10 +182,16 @@ def lwm_gpd(data, error, thr, n, n0, con):
         if sum < con:
             return_val.append(rv)
             likelihood.append(max_value)
-            rv_min = min(rv_min, rv)
-            rv_max = max(rv_max, rv)
+            if rv_min > rv:
+                rv_min = rv
+                xi_min = x
+                sgm_min = s
+            if rv_max < rv:
+                rv_max = rv_max
+                xi_max = x
+                sgm_max = s
         else:
             break
         sum_prob[sorted_array[i][1]] = sum
 
-    return return_val, likelihood, XI, SGM
+    return return_val, likelihood, [xi_min, XI, xi_max], [sgm_min, SGM, sgm_max]
