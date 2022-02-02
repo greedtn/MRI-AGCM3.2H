@@ -139,7 +139,7 @@ def lwm_gpd(data, error, thr, n, n0, con):
         # 100再現期待値
         x = xi[sorted_array[i][1][0]]
         s = sgm[sorted_array[i][1][1]]
-        rv = thr + s * ((100 * 365 * 24 * 79 * 79 * n0 / n) ** x - 1) / x
+        rv = thr + s * ((100 * 365 * 24 * n0 / n) ** x - 1) / x
         if i == 0:
             RV = rv  # 最尤推定値
             print("最尤推定", "ξ:", x, "σ:", s, "RV:", RV)

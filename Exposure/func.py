@@ -1,37 +1,40 @@
 """
-decluster後に15.0mを超えるものが発生したら, その時間のsnapshotを保存する
+<calc_exposure>
+decluster後に15.0mを超えるものを発見したら, その時間のsnapshotを保存する.
 出力としては, 79*79行で, それぞれの行のサイズはSTMの回数になっていて, 
-その中身はSTMが発生したときのその場所の波高になる.
+その中身はSTMが発生したときのその場所の波高になる.また, STM発生時のCNTも出力する.
+
+<calc_max>
+上のCNTの前後1weekを探索して, 前後1weekの各点の最大値を探索する.
+それがExposureの定義である.
 """
 import pygrib
 import os
 import csv
 import numpy as np
 import math
-import pygrib
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 from csv import reader
 import cartopy.crs as ccrs
 import copy
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
 import matplotlib.ticker as ticker
 import PIL
 
 
 def calc_exposure(thr, dir_path, param_name, model_name):
+    """ STM 発生時のsnapshot """
+
     THR = thr  # 閾値
-    POT = [[0] for _ in range(79 * 79)]  # 閾値を超えるデータ(POT[-1]を使用するために初期値を設定)を格納する2d-array
-    POT_IDX = [-168]  # 閾値を超えるデータのindex(POT_IDX[-1]を使用するために初期値を設定)を格納する2d-array
+    POT = [[0] for _ in range(79 * 79)]  # STM発生時のsnapshotを格納する2d-array
+    POT_IDX = [-168]  # STM発生時のCNTを格納する1d-array
     CNT = 0  # indexカウント用の変数
     NOW = 0  # 進捗管理用の変数
 
     DIR_PATH = dir_path
     DIR = os.listdir(DIR_PATH)
 
-    CNT = 0
     for filename in DIR:
         if filename[:3] != "Jpn":  # 日本のデータのみ使用
             continue
@@ -48,12 +51,12 @@ def calc_exposure(thr, dir_path, param_name, model_name):
             n = pot[1][0]
             d = data[m][n]  # STMがが起きた場所
             # decluster(1週間以上間隔を空ける)
-            if CNT > POT_IDX[-1] + 24 * 7:
+            if CNT > POT_IDX[-1] + 24 * 7:  # 新規
                 for i in range(79):
                     for j in range(79):
                         POT[79 * i + j].append(math.floor(data[i][j] * 10 ** 2) / (10 ** 2))
                 POT_IDX.append(CNT)
-            else:
+            else:  # 編集
                 if d > POT[79 * m + n][-1]:
                     for i in range(79):
                         for j in range(79):
@@ -84,11 +87,12 @@ def calc_exposure(thr, dir_path, param_name, model_name):
 
 
 def calc_max(dir_path, model_name, param_name):
+    """ CNTより前後1weekの各点での最大値を探索 """
+
     MAX_DATA = [[0] for _ in range(79 * 79)]  # STM発生前後1wの各地点での最大値を格納する
     with open('../Ex_csv/' + model_name + '_ex_idx.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
         Ex_IDX = list(csv_reader)[0]
-    print(Ex_IDX)
     CNT = 0  # 通し番号
     NOW = 0  # 完了済みファイル数のカウント
 
@@ -107,7 +111,7 @@ def calc_max(dir_path, model_name, param_name):
             CNT += 1
             if CNT == -24 * 7 + int(Ex_IDX[Ex]):  # STMの前後1wに突入
                 is_STM = True
-                TEMP_MAX = np.zeros((79, 79))
+                TEMP_MAX = np.zeros((79, 79))  # 初期化
             if is_STM:
                 data = grb.data()[0].filled(fill_value=0)
                 TEMP_MAX = np.maximum(TEMP_MAX, data)
@@ -139,6 +143,7 @@ def calc_max(dir_path, model_name, param_name):
 
 
 def ex_visualize(model):
+    """ GIF作成 """
 
     with open('../lats.csv', 'r') as csv_file:
         csv_reader = reader(csv_file)
