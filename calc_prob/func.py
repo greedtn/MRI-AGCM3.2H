@@ -192,6 +192,6 @@ def lwm_gpd(data, error, thr, n, n0, con):
                 sgm_max = s
         sum_prob[sorted_array[i][1]] = sum
 
-    print(rv_min, RV, rv_max)
+    print(rv_min, RV, rv_max, 'データ数:', len(data))
 
     return return_val, likelihood, [xi_min, XI, xi_max], [sgm_min, SGM, sgm_max]
